@@ -27,10 +27,18 @@ public class MainActivity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v){
-                Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-                startActivity(intent);
+                launchDetailActivity("Test: From MainActivity!");
             }
         });
+    }
+
+    private void launchDetailActivity(String message) {
+        //Declare an intent to launch DetailActivity
+        Intent intent = new Intent(MainActivity.this, DetailActivity.class);
+        //Put a message into the intent
+        intent.putExtra(DetailActivity.INTENT_MESSAGE, message);
+        //Start DetailActivity
+        startActivity(intent);
     }
 
 }
