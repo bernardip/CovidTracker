@@ -27,18 +27,22 @@ public class MainActivity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v){
-                launchDetailActivity("Test: From MainActivity!");
+                launchDetailActivity("US");
             }
         });
+
     }
 
-    private void launchDetailActivity(String message) {
+    private void launchDetailActivity(String countryCode) {
         //Declare an intent to launch DetailActivity
         Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-        //Put a message into the intent
-        intent.putExtra(DetailActivity.INTENT_MESSAGE, message);
-        //Start DetailActivity
+        Country correctCountry = Country.getCountry(countryCode);
+
+        //put message in intent
+        intent.putExtra("country", correctCountry);
+
         startActivity(intent);
     }
+
 
 }
