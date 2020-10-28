@@ -14,6 +14,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.SearchView;
 
+import com.google.gson.Gson;
+
 public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private CountryAdapter mAdapter;
@@ -39,7 +41,13 @@ public class MainActivity extends AppCompatActivity {
         };
 
         //instantiate adapter and set to recycler view
-        mAdapter = new CountryAdapter(Country.getCountries(), listener);
+
+        //mAdapter = new CountryAdapter(Country.getCountries(), listener);
+        //change mAdapter to get stuff from gson instead
+
+        Gson gson = new Gson();
+        Response response = gson.fromJson(Response.json, Response.class);
+        mAdapter = new CountryAdapter(response.getCountries(), listener);
         mRecyclerView.setAdapter(mAdapter);
 
     }
