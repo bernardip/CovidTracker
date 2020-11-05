@@ -5,10 +5,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.Filterable;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -79,6 +82,7 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.CountryV
         //sets values of place holders
         Country country = mCountriesFiltered.get(position);
         DecimalFormat df = new DecimalFormat("#,###,###,###");
+        Glide.with(holder.image).load("https://www.countryflags.io/" + country.getCountryCode() + "/shiny/64.png").into(holder.image);
         holder.country.setText(country.getCountry());
         holder.totalCases.setText(df.format(country.getTotalConfirmed()));
         holder.newCases.setText(df.format(country.getNewConfirmed()));
@@ -92,6 +96,7 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.CountryV
 
     public class CountryViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         public TextView country, totalCases, newCases;
+        public ImageView image;
         private Listener listener;
 
         public CountryViewHolder(@NonNull View itemView, Listener listener) {
@@ -100,6 +105,7 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.CountryV
             this.listener = listener;
             itemView.setOnClickListener(this);
 
+            image = itemView.findViewById(R.id.ivList);
             country = itemView.findViewById(R.id.tvCountry);
             totalCases = itemView.findViewById(R.id.tvTotalCases);
             newCases = itemView.findViewById(R.id.tvNewCases);
@@ -130,5 +136,10 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.CountryV
         notifyDataSetChanged();
     }
 
+    public void setData(List<Country> data) {
+        mCountriesFiltered.clear();
+        mCountriesFiltered.addAll(data);
+        notifyDataSetChanged();
+    }
 
 }

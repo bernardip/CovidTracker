@@ -16,7 +16,16 @@ import android.widget.SearchView;
 
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private RecyclerView mRecyclerView;
     private CountryAdapter mAdapter;
     private RecyclerView.LayoutManager layoutManager;
@@ -45,10 +54,40 @@ public class MainActivity extends AppCompatActivity {
         //mAdapter = new CountryAdapter(Country.getCountries(), listener);
         //change mAdapter to get stuff from gson instead
 
-        Gson gson = new Gson();
-        Response response = gson.fromJson(Response.json, Response.class);
-        mAdapter = new CountryAdapter(response.getCountries(), listener);
-        mRecyclerView.setAdapter(mAdapter);
+        //Gson gson = new Gson();
+        //Response response = gson.fromJson(Response.json, Response.class);
+
+        //Implement Retrofit instead of the above - calls json using html instead of hardcoded json in Response class
+
+        mAdapter = new CountryAdapter(new ArrayList<Country>(), listener);
+        //implement a retrofit instance to make API call
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://api.covid19api.com")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        //implement a service interface
+        CovidService service = retrofit.create(CovidService.class);
+
+        Call<Response> responseCall = service.getResponse();
+
+        responseCall.enqueue(new Callback<Response>() {
+            @Override
+            public void onResponse(Call<Response> call, retrofit2.Response<Response> response) {
+                Log.d(TAG, "onResponse: API call succeeded!");
+                // Get list of countries from body of response
+                List<Country> countries = response.body().getCountries();
+                mAdapter.setData(countries);
+                mRecyclerView.setAdapter(mAdapter);
+            }
+
+            @Override
+            public void onFailure(Call<Response> call, Throwable t) {
+                Log.d(TAG, "onFailure: API call failed.");
+            }
+        });
+
+
 
     }
 
