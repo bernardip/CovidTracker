@@ -1,8 +1,13 @@
 package au.edu.unsw.infs3634.covidtracker;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.DatabaseConfiguration;
+import androidx.room.InvalidationTracker;
+import androidx.room.Room;
+import androidx.sqlite.db.SupportSQLiteOpenHelper;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -18,6 +23,7 @@ import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -29,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private CountryAdapter mAdapter;
     private RecyclerView.LayoutManager layoutManager;
+    private CountryDatabase mDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +67,23 @@ public class MainActivity extends AppCompatActivity {
         //Implement Retrofit instead of the above - calls json using html instead of hardcoded json in Response class
 
         mAdapter = new CountryAdapter(new ArrayList<Country>(), listener);
+        mRecyclerView.setAdapter(mAdapter);
+
+        //Create a CountryDatabase Room database
+        mDb = Room.databaseBuilder(getApplicationContext(), CountryDatabase.class, "country-database").build();
+
+        //On MainActivity start up, get list of all countries from the database and set into adapter
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                //set the adapter with a list of countries from the database
+                mAdapter.setData(mDb.countryDao().getCountries());
+
+                //sort the RecyclerView list
+                mAdapter.sort(2);
+            }
+        });
+
         //implement a retrofit instance to make API call
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://api.covid19api.com")
@@ -77,8 +101,19 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onResponse: API call succeeded!");
                 // Get list of countries from body of response
                 List<Country> countries = response.body().getCountries();
+                Executors.newSingleThreadExecutor().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        //Delete all countries from country entity
+                        mDb.countryDao().deleteAll(mDb.countryDao().getCountries().toArray(new Country[0]));
+                        //Insert the new list from API call into country entity
+                        mDb.countryDao().insertAll(countries.toArray(new Country[0]));
+
+                    }
+                });
                 mAdapter.setData(countries);
-                mRecyclerView.setAdapter(mAdapter);
+                mAdapter.sort(2);
+
             }
 
             @Override

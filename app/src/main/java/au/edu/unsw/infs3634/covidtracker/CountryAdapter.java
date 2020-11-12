@@ -82,7 +82,9 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.CountryV
         //sets values of place holders
         Country country = mCountriesFiltered.get(position);
         DecimalFormat df = new DecimalFormat("#,###,###,###");
-        Glide.with(holder.image).load("https://www.countryflags.io/" + country.getCountryCode() + "/shiny/64.png").into(holder.image);
+        Glide.with(holder.image)
+                .load("https://www.countryflags.io/" + country.getCountryCode() + "/shiny/64.png")
+                .into(holder.image);
         holder.country.setText(country.getCountry());
         holder.totalCases.setText(df.format(country.getTotalConfirmed()));
         holder.newCases.setText(df.format(country.getNewConfirmed()));

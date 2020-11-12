@@ -1,6 +1,7 @@
 package au.edu.unsw.infs3634.covidtracker;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.room.Room;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -17,6 +18,7 @@ import com.google.gson.Gson;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -36,6 +38,7 @@ public class DetailActivity extends AppCompatActivity {
     private TextView mTotalRecovered;
     private ImageView mFlag;
     private ImageView mSearch;
+    private CountryDatabase mDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,59 +56,45 @@ public class DetailActivity extends AppCompatActivity {
         mSearch = findViewById(R.id.btnSearchIcon);
 
         Intent intent = getIntent();
-        String countryCode = intent.getStringExtra(INTENT_MESSAGE);
 
-        //implement a retrofit instance to make API call
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://api.covid19api.com")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+        final String countryCode = intent.getStringExtra(INTENT_MESSAGE);
 
-        //implement a service interface
-        CovidService service = retrofit.create(CovidService.class);
+        Glide.with(mFlag)
+                .load("https://www.countryflags.io/" + countryCode + "/shiny/64.png")
+                .into(mFlag);
 
-        Call<Response> responseCall = service.getResponse();
+        mDb = Room.databaseBuilder(getApplicationContext(), CountryDatabase.class, "country-database").build();
 
-        responseCall.enqueue(new Callback<Response>() {
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
-            public void onResponse(Call<Response> call, retrofit2.Response<Response> response) {
-                Log.d(TAG, "onResponse: API call succeeded!");
-                // Get list of countries from body of response
-                List<Country> countries = response.body().getCountries();
+            public void run() {
+                //find the country with countryCode from database
+                Country country = mDb.countryDao().getCountry(countryCode);
 
-                for (final Country country : countries) {
-                    if (country.getCountryCode().equals(countryCode)) {
-                        DecimalFormat df = new DecimalFormat("#,###,###,###");
-                        setTitle(country.getCountryCode());
-                        Glide.with(mFlag).load("https://www.countryflags.io/" + country.getCountryCode() + "/shiny/64.png").into(mFlag);
-                        mCountry.setText(country.getCountry());
-                        mNewCases.setText(df.format(country.getNewConfirmed()));
-                        mTotalCases.setText(df.format(country.getTotalConfirmed()));
-                        mNewDeaths.setText(df.format(country.getNewDeaths()));
-                        mTotalDeaths.setText(df.format(country.getTotalDeaths()));
-                        mNewRecovered.setText(df.format(country.getNewRecovered()));
-                        mTotalRecovered.setText(df.format(country.getTotalRecovered()));
-                        mSearch.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                searchCountry(country.getCountry());
-                            }
+                DecimalFormat df = new DecimalFormat("#,###,###,###");
 
-                            private void searchCountry(String country) {
-                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=covid " + country));
-                                startActivity(intent);
-                            }
-                        });
+                mCountry.setText(country.getCountry());
+                mNewCases.setText(df.format(country.getNewConfirmed()));
+                mTotalCases.setText(df.format(country.getTotalConfirmed()));
+                mNewDeaths.setText(df.format(country.getNewDeaths()));
+                mTotalDeaths.setText(df.format(country.getTotalDeaths()));
+                mNewRecovered.setText(df.format(country.getNewRecovered()));
+                mTotalRecovered.setText(df.format(country.getTotalRecovered()));
+
+                //make button
+                mSearch.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        searchCountry(country.getCountry());
                     }
-                }
-            }
 
-            @Override
-            public void onFailure(Call<Response> call, Throwable t) {
-                Log.d(TAG, "onFailure: API call failed.");
+                });
             }
         });
+    }
 
-
+    private void searchCountry(String country) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=covid " + country));
+        startActivity(intent);
     }
 }
