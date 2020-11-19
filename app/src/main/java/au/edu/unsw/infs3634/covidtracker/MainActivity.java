@@ -17,8 +17,16 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.SearchView;
+import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -114,6 +122,29 @@ public class MainActivity extends AppCompatActivity {
                 mAdapter.setData(countries);
                 mAdapter.sort(2);
 
+                // Read a message to the database
+                FirebaseDatabase database = FirebaseDatabase.getInstance();
+                DatabaseReference myRef = database.getReference(FirebaseAuth.getInstance().getUid());
+                myRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        String result = (String) snapshot.getValue();
+                        if (result != null) {
+                            for (Country home : countries) {
+                                if (home.getCountryCode().equals(result)) {
+                                    //Display toast message
+                                    Toast.makeText(MainActivity.this, home.getNewConfirmed() + " new cases in " + home.getCountry(), Toast.LENGTH_LONG).show();
+                                }
+                            }
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
             }
 
             @Override
